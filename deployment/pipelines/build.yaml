@@ -9,12 +9,15 @@ resources:
 - repo: self
 
 variables:
+  group: Build-Variables
 
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: 'd5923c5f-729e-49ec-a541-c4a0202e01a9'
   imageRepository: 'sitecoremasteraks'
   containerRegistry: 'igniumdigital.azurecr.io'
   imagePullSecret: 'igniumdigitala17c-auth'
+
+
 
   # Agent VM image name
   vmImageName: 'windows-latest'
