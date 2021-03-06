@@ -19,7 +19,7 @@ variables:
   imagePullSecret: 'igniumdigitala17c-auth'
 
   # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+  vmImageName: 'windows-latest'
 
 
 stages:
