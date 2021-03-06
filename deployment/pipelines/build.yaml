@@ -57,6 +57,7 @@ stages:
         additionalImageTags: '$(Build.BuildNumber)-$(Build.SourceBranchName)'
         action: 'Push services'
         includeLatestTag: true
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     - task: CopyFiles@2
       inputs:
         SourceFolder: 'deployment'
