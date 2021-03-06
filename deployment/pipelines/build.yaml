@@ -3,7 +3,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- master
+- main
 
 resources:
 - repo: self
@@ -32,49 +32,34 @@ stages:
       vmImage: $(vmImageName)
     steps:
     - task: DockerCompose@0
-      displayName: "Build Images"
       inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Pay-As-You-Go(8e41e57d-9545-427d-919a-9347c41d69bb)'
+        azureContainerRegistry: '{"loginServer":"igniumdigital.azurecr.io", "id" : "/subscriptions/8e41e57d-9545-427d-919a-9347c41d69bb/resourceGroups/Ignium-Docker/providers/Microsoft.ContainerRegistry/registries/IgniumDigital"}'
         dockerComposeFile: '**/docker/docker-compose.yml'
-        additionalDockerComposeFiles: 'docker-compose.override.yml'
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          $(tag)
-
-    - upload: manifests
-      artifact: manifests
-
-- stage: Deploy
-  displayName: Deploy stage
-  dependsOn: Build
-
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    pool:
-      vmImage: $(vmImageName)
-    environment: 'sitecoremasterAKS.meetup-prod'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
-            inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-          - task: KubernetesManifest@0
-            displayName: Deploy to Kubernetes cluster
-            inputs:
-              action: deploy
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
-              imagePullSecrets: |
-                $(imagePullSecret)
-              containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)
-
+        additionalDockerComposeFiles: '**/docker/docker-compose.override.yml'
+        dockerComposeFileArgs: 'REGISTRY=igniumdigital.azurecr.io'
+        action: 'Build services'
+        additionalImageTags: '$(Build.BuildNumber)-$(Build.SourceBranchName)'
+        includeLatestTag: true
+    - task: DockerCompose@0
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Pay-As-You-Go(8e41e57d-9545-427d-919a-9347c41d69bb)'
+        azureContainerRegistry: '{"loginServer":"igniumdigital.azurecr.io", "id" : "/subscriptions/8e41e57d-9545-427d-919a-9347c41d69bb/resourceGroups/Ignium-Docker/providers/Microsoft.ContainerRegistry/registries/IgniumDigital"}'
+        dockerComposeFile: '**/docker/docker-compose.yml'
+        additionalDockerComposeFiles: '**/docker/docker-compose.override.yml'
+        dockerComposeFileArgs: 'REGISTRY=igniumdigital.azurecr.io'
+        additionalImageTags: '$(Build.BuildNumber)-$(Build.SourceBranchName)'
+        action: 'Push services'
+        includeLatestTag: true
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '/deployment'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/deployment'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'Texorida-$(Build.BuildNumber)'
+        publishLocation: 'pipeline'
