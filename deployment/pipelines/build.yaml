@@ -3,10 +3,13 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- main
+  branches:
+    include:
+    - main
 
 resources:
 - repo: self
+  clean: true
 
 variables:
   - group: Build-Variables
